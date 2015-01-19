@@ -70,13 +70,13 @@ def example():
 
     # libdai works in exp space
     pairwise_exp = np.exp(pairwise)
-
+    
     # build edges for max product inference:
     inds = np.arange(np.prod(newshape)).reshape(newshape).astype(np.int64)
     horz = np.c_[inds[:, :-1].ravel(), inds[:, 1:].ravel()]
     vert = np.c_[inds[:-1, :].ravel(), inds[1:, :].ravel()]
     edges = np.vstack([horz, vert]).copy()
-
+    pairwise_exp = np.repeat(pairwise_exp[np.newaxis, :, :], len(edges), axis=0)
     #asdf = np.random.permutation(len(edges))
     #edges = edges[asdf]
 
@@ -85,15 +85,16 @@ def example():
                       edges, pairwise_exp, alg='maxprod')
     time_maxprod = time() - start
     energy_max_prod = energy(unaries, max_product.reshape(newshape), -pairwise)
+    
     start = time()
     trw = mrf(np.exp(-unaries.reshape(-1, n_disps)),
               edges, pairwise_exp, alg='trw')
     time_trw = time() - start
-    energy_trw = energy(unaries, trw, -pairwise)
-
+    energy_trw = energy(unaries, trw.reshape(newshape), -pairwise)
+    
     start = time()
     treeep = mrf(np.exp(-unaries.reshape(-1, n_disps)),
-                 edges, pairwise, alg='treeep')
+                 edges, pairwise_exp, alg='treeep')
     time_treeep = time() - start
     energy_treeep = energy(unaries, treeep.reshape(newshape), -pairwise)
 
@@ -125,8 +126,10 @@ def example():
     axes[2, 2].set_title("gibbs %.2fs, e=%f" % (time_gibbs, energy_gibbs))
     axes[2, 2].matshow(gibbs.reshape(newshape), vmin=0, vmax=8)
     for ax in axes.ravel():
-        ax.set_xticks(())
-        ax.set_yticks(())
+            ax.set_xticks(())
+            ax.set_yticks(())
+    axes[1, 1].axis('off')
+    axes[2, 1].axis('off')
     plt.tight_layout()
     plt.show()
 
